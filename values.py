@@ -1177,7 +1177,7 @@ REAL_ROBOT_ARM_SPEED_PERCENT = 100.0
 # gravity; bump it up if you see it stall on lifts.
 REAL_ROBOT_TORQUE_LIMIT_PERCENT = 70.0
 REAL_ROBOT_TORQUE_LIMIT_BY_MOTOR_ID = {
-    1: 30.0,   # shoulder_pan
+    1: 25.0,   # shoulder_pan
     2: 45.0,   # shoulder_lift  (gravity load; keep higher to avoid stalls)
     3: 30.0,   # elbow_flex
     4: 30.0,   # wrist_flex
