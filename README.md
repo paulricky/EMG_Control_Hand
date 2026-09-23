@@ -691,7 +691,3 @@ Body-connected electrodes require a battery-powered, medically appropriate isola
 The repository contains upstream SO-ARM100/101 renders, CAD, and camera-mount images under `SO-ARM100/media/`, plus generated ArUco/ChArUco calibration targets under `calibration_data/artifacts/`. It does not currently include a project-specific system photograph, EMG setup photograph, demo GIF, or validated experiment video, so none is presented here as evidence of the integrated system.
 
 The `SO-ARM100` Git submodule is upstream open-source mechanical/simulation work and should not be attributed to this repository's authors. The Aero Hand model, joint/actuation conventions, SDK, and MuJoCo Menagerie assets are also external dependencies; this project provides integration, sensing, mapping, learning, and control code around them.
-
-## License
-
-No license file or license declaration is present at the root of this repository. Consequently, no license is asserted here. The `SO-ARM100` submodule carries its own Apache License 2.0, which applies to that upstream submodule rather than automatically licensing the surrounding project. External packages, models, and SDKs retain their respective licenses.
