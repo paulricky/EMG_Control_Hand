@@ -1,0 +1,2 @@
+mujoco_model_path: mujoco_menagerie/tetheria_aero_hand_open/scene_right.xml
+physics_timestep_s: 0.01

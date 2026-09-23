@@ -1,0 +1,12 @@
+emg_serial_port: /dev/ttyACM0
+emg_baudrate: 921600
+emg_channels: 4
+emg_sample_rate_hz: 2000
+window_s: 0.2
+stride_s: 0.05
+label_reference: center
+model_checkpoint: models/emg_baseline.npz
+notch_hz: 60
+notch_q: 30
+bandpass_hz: [20, 450]
+emg_calibration_file: calibration_data/emg_right_calibration.json

@@ -1,0 +1,4 @@
+camera_id: 0
+right_hand_confidence: 0.7
+joint_filter_tau_s: 0.08
+wrist_filter_tau_s: 0.12

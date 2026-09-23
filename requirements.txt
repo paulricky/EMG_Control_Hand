@@ -7,3 +7,9 @@ lerobot==0.3.3
 torch==2.2.2
 torchvision==0.17.2
 ultralytics==8.2.0
+mujoco>=3.3,<4
+mujoco-menagerie>=2026.9.0
+aero-open-sdk>=0.1.0.dev1
+PyYAML>=6.0
+matplotlib>=3.8
+pytest>=8.0

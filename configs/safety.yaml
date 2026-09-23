@@ -1,0 +1,11 @@
+command_timeout_s: 0.5
+tracking_timeout_s: 0.5
+emg_inference_timeout_s: 0.25
+fault_action: hold
+max_current_ma: 1200
+max_temperature_c: 65
+max_velocity_rpm: 100
+communication_timeout_s: 0.5
+telemetry_poll_hz: 20
+slew_rate_01_per_s: [0.8, 0.8, 1.0, 1.2, 1.2, 1.2, 1.2]
+command_filter_tau_s: 0.08

@@ -1,0 +1,7 @@
+aero_serial_port: null
+aero_baudrate: 921600
+dry_run: true
+hand: Right
+telemetry_poll_hz: 20
+aero_speed: 5000
+aero_torque: 300
