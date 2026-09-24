@@ -11,7 +11,21 @@ The code implements much of the software pipeline, but the repository does **not
 The project contains two related control paths:
 
 1. **Right-hand / Aero Hand research path (`src/`)** — MediaPipe hand landmarks are converted into calibrated 16-joint hand kinematics and a compact seven-dimensional control target. The same canonical target can drive the official Aero Hand MuJoCo model or the physical hand through its SDK. A four-channel serial EMG path can be recorded alongside vision labels, trained with ridge regression or a temporal CNN, and substituted for vision at runtime.
-2. **Legacy SO-arm path (root modules)** — camera-based hand position, depth, orientation, and gestures are mapped to an eight-motor SO-arm/parallel gripper platform. This path includes extensive camera, workspace, motor, and kinematic calibration plus an experimental object-detection pick-and-place system.
+   
+<p align="center">
+    <img width="600" alt="02bd7403-15e1-4884-ac6c-22f52b9b84d5" src="https://github.com/user-attachments/assets/65e67040-9a7e-4d80-8905-c71b795a9c1d" />
+    <br>
+  <em>Figure 1. Aero Hand hardware setup</em>
+</p>
+
+2. **Legacy SO-arm path (root modules)** — camera-based hand position, depth, orientation, and gestures are mapped to an eight-motor SO-arm/parallel gripper platform. This path includes extensive camera, workspace, motor, and kinematic calibration plus an experimental object-detection pick-and-place system. Note that this path only works for the midified SO101 arm with & degrees of freedom, not the original 5 DOF arm.
+
+<p align="center">
+    <img width="600" alt="yf38r7wh498" src="https://github.com/user-attachments/assets/a506601a-5ca8-406c-8cf9-42a3d970dd8c" />
+    <br>
+  <em>Figure 2. Modified 7 DOF SO-101 Arm <br>
+      Note that end effector can be swapped out with Aero Hand</em>
+</p>
 
 These paths share the broader research goal but are not a single monolithic controller. In particular, the Aero runtime directly controls the hand; its optional `--wrist-follow` adapter sends only three wrist targets to the existing SO-arm controller while holding the other arm joints neutral. The older `main.py` controls the SO arm and its gripper but does not run the EMG learning pipeline.
 
@@ -305,6 +319,10 @@ The active simulator is MuJoCo with the official `tetheria_aero_hand_open/scene_
 - compare commanded tendon lengths and resulting joint motion.
 
 Sixteen desired anatomical angles are transformed with the Chestnut/Aero joint-to-actuation equations into seven actuator rotations. Four finger tendons and two thumb tendons are converted using 9 mm pulley travel; thumb abduction maps directly to the model control. Controls are clipped to the official model ranges. The configured physics time step is 10 ms and the runtime advances up to 20 catch-up steps per loop.
+
+| Hand Position Capturing | MuJuCo Simulation |
+|---|---|
+| <img src="https://github.com/user-attachments/assets/5ac0fffe-335e-4e53-b378-5efd9a4280c1" width="600"/> | <img src="https://github.com/user-attachments/assets/d97dbff8-3818-44b3-b529-3da68ad7735c" width="600"/> |
 
 The repository also includes upstream SO-ARM100/101 URDF, MuJoCo XML, mesh, STEP, and STL assets. The old root `simulation.py` contains a PyBullet design, but every line is commented; it must not be treated as an operational simulator.
 
@@ -629,36 +647,6 @@ For future studies, evaluation should preserve session-level separation and repo
 
 Classification accuracy/F1 are relevant only if a categorical gesture model is added; the current models are regressors.
 
-## Project Status
-
-### Implemented
-
-- Calibrated right-hand MediaPipe tracking with continuous 16-joint and seven-control states.
-- Canonical vision/EMG-to-Aero command architecture with filtering, slew limits, timeouts, and telemetry checks.
-- Official Aero Hand MuJoCo backend, hardware SDK backend, and identical-command dual backend.
-- Four-channel configurable EMG packet parsing, CRC, filtering, temporal buffering, and calibration.
-- MCU/host clock alignment and vision-labeled `.npz` session recording.
-- Feature/ridge and temporal-CNN seven-output regression pipelines.
-- Session-disjoint train/validation/test splitting and regression evaluation utilities.
-- Legacy physical SO-arm tracking, calibration, command, feedback, gesture, and pick/place code.
-
-### In development / experimental
-
-- End-to-end EMG acquisition on a documented MCU/ADC/electrode apparatus.
-- Collection and quality control of synchronized multi-session datasets.
-- Trained EMG checkpoints and verified real-time EMG-only control.
-- Temporal-model selection, validation-driven training, and robust confidence estimation.
-- Aero-to-SO-arm wrist coordination and whole arm-plus-hand control.
-- Legacy Cartesian IK/workspace mapping and automated pick/place deployment.
-- Reproducible sim-to-real logging in the exact format expected by the comparison script.
-
-### Planned research
-
-- Cross-session and electrode-repositioning evaluation.
-- Subject-specific versus cross-subject models.
-- Physical prosthetic-hand integration and closed-loop task studies.
-- Force/tactile feedback and grasp safety.
-- Clinical/human-subject validation under an appropriate approved protocol.
 
 ## Research Roadmap
 
@@ -699,15 +687,4 @@ Classification accuracy/F1 are relevant only if a categorical gesture model is a
 - Can calibrated uncertainty and source-quality checks improve safe real-time control?
 - How well do models generalize between sessions, users, and hardware configurations?
 - Can EMG-predicted states produce stable task-level control of a physical robotic/prosthetic hand?
-
-## Safety and Research Disclaimer
-
-This is an engineering research platform, not a medical device and not validated for diagnosis, treatment, or clinical prosthetic use.
-
-Body-connected electrodes require a battery-powered, medically appropriate isolated acquisition path; never connect electrodes through unsafe mains-referenced instrumentation. Before enabling robot motion, secure the apparatus, keep clear of pinch points, use conservative limits, verify homing and telemetry, test the configured fault action at low torque, and maintain an accessible physical power disconnect. A software timeout is not a substitute for electrical and mechanical safety.
-
-## Media and Demonstration
-
-The repository contains upstream SO-ARM100/101 renders, CAD, and camera-mount images under `SO-ARM100/media/`, plus generated ArUco/ChArUco calibration targets under `calibration_data/artifacts/`. It does not currently include a project-specific system photograph, EMG setup photograph, demo GIF, or validated experiment video, so none is presented here as evidence of the integrated system.
-
 The `SO-ARM100` Git submodule is upstream open-source mechanical/simulation work and should not be attributed to this repository's authors. The Aero Hand model, joint/actuation conventions, SDK, and MuJoCo Menagerie assets are also external dependencies; this project provides integration, sensing, mapping, learning, and control code around them.
