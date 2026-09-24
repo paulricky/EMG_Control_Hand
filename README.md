@@ -10,7 +10,7 @@ The code implements much of the software pipeline, but the repository does **not
 
 The project contains two related control paths:
 
-1. **Right-hand / Aero Hand research path (`src/`)** — MediaPipe hand landmarks are converted into calibrated 16-joint hand kinematics and a compact seven-dimensional control target. The same canonical target can drive the official Aero Hand MuJoCo model or the physical hand through its SDK. A four-channel serial EMG path can be recorded alongside vision labels, trained with ridge regression or a temporal CNN, and substituted for vision at runtime.
+1. **Right-hand / Aero Hand research path (`src/`)** — MediaPipe hand landmarks are converted into calibrated 16-joint hand kinematics and a compact seven-dimensional control target. The same canonical target can drive either the official Aero Hand MuJoCo model or the physical hand through its SDK. During EMG data collection, four-channel forearm EMG is recorded synchronously with the vision-derived hand-state labels. The project implements two EMG decoding approaches: a feature-based ridge-regression baseline and a small 1-D temporal CNN that learns directly from time-windowed EMG. Both predict the same seven-dimensional hand-state target and can be evaluated against the camera-derived labels. The long-term goal is to replace vision at runtime with EMG-only hand-state inference for robotic or prosthetic control.
    
 <p align="center">
     <img width="600" alt="02bd7403-15e1-4884-ac6c-22f52b9b84d5" src="https://github.com/user-attachments/assets/65e67040-9a7e-4d80-8905-c71b795a9c1d" />
@@ -18,13 +18,13 @@ The project contains two related control paths:
   <em>Figure 1. Aero Hand hardware setup</em>
 </p>
 
-2. **Legacy SO-arm path (root modules)** — camera-based hand position, depth, orientation, and gestures are mapped to an eight-motor SO-arm/parallel gripper platform. This path includes extensive camera, workspace, motor, and kinematic calibration plus an experimental object-detection pick-and-place system. Note that this path only works for the midified SO101 arm with & degrees of freedom, not the original 5 DOF arm.
+2. **Legacy SO-arm path (root modules)** — camera-based hand position, depth, orientation, and gestures are mapped to an eight-motor SO-arm/parallel gripper platform. This path includes extensive camera, workspace, motor, and kinematic calibration plus an experimental object-detection pick-and-place system. This path only works for the modified SO101 arm with 7 degrees of freedom, not the original 5 DOF SO101 and SO100 models. Note that while end effector can be swapped out with Aero Hand, the kinematic chain would need additional modification for long term use (the final joint is not designed for the extra weight and motion further up the chain).
 
 <p align="center">
     <img width="600" alt="yf38r7wh498" src="https://github.com/user-attachments/assets/a506601a-5ca8-406c-8cf9-42a3d970dd8c" />
     <br>
-  <em>Figure 2. Modified 7 DOF SO-101 Arm <br>
-      Note that end effector can be swapped out with Aero Hand</em>
+  <em>Figure 2. Modified 7 DOF SO-101 Arm
+      </em>
 </p>
 
 These paths share the broader research goal but are not a single monolithic controller. In particular, the Aero runtime directly controls the hand; its optional `--wrist-follow` adapter sends only three wrist targets to the existing SO-arm controller while holding the other arm joints neutral. The older `main.py` controls the SO arm and its gripper but does not run the EMG learning pipeline.
@@ -37,7 +37,7 @@ The long-term question is:
 
 A threshold controller such as `if EMG1 > threshold: close finger` discards temporal structure, couples one electrode to one preselected action, and does not naturally represent coordinated or partially flexed postures. This project instead formulates control as supervised learning from recent multichannel muscle activity to a calibrated, multidimensional hand state.
 
-Computer vision is useful here because it provides non-contact observations of the hand during data collection. MediaPipe landmarks are converted into anatomical joint angles and normalized per participant. Those measurements become training labels for synchronized EMG. This does not establish clinical intent or ground-truth biomechanics—monocular landmark estimates have their own errors—but it creates a practical labeling mechanism for research-scale data acquisition.
+Computer vision is useful here because it provides non-contact observations of the hand during data collection. MediaPipe landmarks are converted into anatomical joint angles and normalized per participant. Those measurements become training labels for synchronized EMG. This does not establish clinical intent or ground-truth biomechanics—monocular landmark estimates have their own errors—but it creates a practical labeling mechanism for research-scale data acquisition. An additional benefit to using hand landmarks is that it becomes very easy to both validate accurate data points and remove any that are a poor match.
 
 ## Current System Capabilities
 
@@ -47,18 +47,18 @@ Computer vision is useful here because it provides non-contact observations of t
 | Vision-derived hand kinematics | **Implemented** | Computes a palm frame, quaternion, 16 anatomical flexion channels, per-user normalization, and a seven-channel compact target. |
 | Vision-to-Aero direct mimic | **Implemented** | A canonical command mapper drives MuJoCo, the official hardware SDK, or both from the same immutable command. |
 | Aero Hand MuJoCo simulation | **Implemented and tested in code** | Uses the official right-hand Menagerie model and seven tendon/position controls; integration tests are included. |
-| Physical Aero Hand backend | **Implemented; apparatus validation required** | Sends all 16 joint angles through `aero-open-sdk`, reads seven-actuator telemetry, and defaults to no motion unless explicitly enabled. |
+| Physical Aero Hand backend | **Implemented; additional apparatus tuning required** | Sends all 16 joint angles through `aero-open-sdk`, reads seven-actuator telemetry, and defaults to no motion unless explicitly enabled. |
 | SO-arm vision teleoperation | **Implemented / actively configured** | Root runtime supports an eight-motor Feetech arm and gripper, camera tracking, calibration, asynchronous commands, and feedback. Current configuration uses proportional mapping, not Cartesian IK. |
 | SO-arm Cartesian IK and workspace mapping | **Experimental / disabled by current configuration** | FK, DLS IK, calibrated workspace maps, residual corrections, and audits exist, but `values.py` disables the Cartesian path because current anchors select unsafe/unreliable branches. |
 | SO-arm pick and place | **Experimental / partially deployable** | YOLO detection, ArUco localization, waypoint planning, and visual servo code exist; required top-down calibration files and model weights are not tracked. |
 | Legacy SO-arm simulation | **Not active** | SO-ARM100/101 URDF assets are present, but the root `simulation.py` implementation is fully commented out. |
 | Four-channel EMG serial acquisition | **Implemented in host software** | Packet parser, CRC validation, serial reader, MCU/host timestamps, calibration utility, and default 2 kHz configuration exist. Acquisition firmware and circuit design are absent. |
 | EMG filtering and temporal windows | **Implemented** | Baseline removal, per-channel scaling, causal 60 Hz notch, fourth-order 20–450 Hz band-pass, 200 ms windows, and 50 ms stride are configured. |
-| Synchronized EMG/vision recording | **Implemented in software; no dataset tracked** | Fits MCU time to host time, retains recent camera states, assigns the nearest vision label, and writes compressed NumPy sessions. |
-| Feature-based EMG regression | **Implemented; untrained in repository** | MAV, RMS, waveform length, variance, zero crossings, and slope-sign changes feed a seven-output ridge regressor. |
-| Temporal EMG model | **Implemented; experimental and untrained in repository** | A three-layer 1-D PyTorch CNN predicts seven normalized continuous hand controls. |
+| Synchronized EMG/vision recording | **Implemented in software** | Fits MCU time to host time, retains recent camera states, assigns the nearest vision label, and writes compressed NumPy sessions. |
+| Feature-based EMG regression | **Implemented; additional training required** | MAV, RMS, waveform length, variance, zero crossings, and slope-sign changes feed a seven-output ridge regressor. |
+| Temporal EMG model | **Implemented; additional training required** | A three-layer 1-D PyTorch CNN predicts seven normalized continuous hand controls. |
 | EMG-only runtime control | **Implemented in software; not demonstrated by tracked artifacts** | A saved ridge or temporal checkpoint can drive simulation or the physical hand. No checkpoint or quantitative result is committed. |
-| Clinical/prosthetic validation | **Planned research direction** | No human-subject protocol, clinical validation, force/tactile feedback, or performance claims are present. |
+| Clinical/prosthetic validation | **Future research direction** | No human-subject protocol, clinical validation, force/tactile feedback, or performance claims are present. |
 
 ## System Architecture
 
@@ -167,7 +167,7 @@ The camera is not required by the implemented EMG inference source. It is used t
 
 ### 1. EMG acquisition
 
-The host expects an external MCU/ADC to send one sample per framed packet. The default configuration is four channels at 2,000 samples/s over a 921,600-baud serial link. The repository does not include the MCU firmware, ADC part number, wiring, electrode placement, or a MyoWare-specific electrical interface; MyoWare is therefore a project direction/hardware assumption rather than a repository-verifiable driver.
+The host expects an external MCU/ADC to send one sample per framed packet. The default configuration is four channels at 2,000 samples/s over a 921,600-baud serial link. The repository does not include the MCU firmware, ADC part number, wiring, electrode placement, or a MyoWare-specific electrical interface; MyoWare is a project direction/hardware assumption (mostly because of ease of access) rather than a repository-verifiable driver.
 
 The little-endian wire frame is:
 
@@ -272,7 +272,7 @@ Palm orientation is represented relative to a neutral frame only when optional S
 
 The older `HandTracker` supports a broader teleoperation stack: handedness selection, normalized image position, monocular depth from calibrated hand size, optional ArUco glove depth, palm/wrist orientation, open/close and snap/clap gestures, calibrated human-to-robot workspace maps, and asynchronous IK. Calibration utilities cover ChArUco intrinsics, ArUco extrinsics, hand depth, paired hand/robot workspace poses, and audit reports.
 
-The current final settings in `values.py` explicitly set `HAND_USE_CARTESIAN_IK=False` and `HAND_CARTESIAN_MAPPING_ENABLED=False`. Therefore the active root runtime uses the older proportional mapping for hand x/y/depth to shoulder pan, shoulder lift, elbow flex, and wrist flex, with optional palm roll. The DLS Cartesian solver and learned residual workspace maps remain experimental until calibration and branch selection are corrected.
+The current final settings in `values.py` explicitly set `HAND_USE_CARTESIAN_IK=False` and `HAND_CARTESIAN_MAPPING_ENABLED=False`. Therefore the active root runtime uses the older proportional mapping for hand x/y/depth to shoulder pan, shoulder lift, elbow flex, and wrist flex, with optional palm roll. The DLS Cartesian solver and learned residual workspace maps remain experimental until calibration and branch selection are corrected. Note that the old kinematic model is not perfect by any means, and was never improved upon due to a shift in focus.
 
 ## Robot Control
 
@@ -610,7 +610,9 @@ The MuJoCo integration tests skip if optional simulation dependencies are unavai
 
 `camera_calibrate.py` supports ChArUco intrinsics, ArUco extrinsics, monocular hand-depth anchors, and paired human/robot workspace poses. Audit tools under `scripts/` examine mirror/workspace anchor ordering, coverage, and reproduction error. These are primarily for the legacy SO-arm Cartesian/workspace path, which is currently disabled in favor of proportional mapping.
 
-Generated calibration artifacts live in `calibration_data/`; model-calibration candidates may also use `calibration_artifacts/`. Some files contain apparatus-specific absolute assumptions, and `values.py` currently includes an absolute local `URDF_PATH`, so portability requires review.
+Generated calibration artifacts live in `calibration_data/`; model-calibration candidates may also use `calibration_artifacts/`. Some files contain apparatus-specific absolute assumptions, and `values.py` currently includes an absolute local `URDF_PATH`, so portability requires review. 
+
+In retrospect, stereo vision would have been a much better setup for this project, but at the time this form of calibration was much easier to integrate, setup, and test given the time constraints. Given the shift away from a vision based model this was never implemented later on but could be a potential future implementation goal for supplemnental assistance for pick and place actions if needed.
 
 ## Research Workflow
 
