@@ -4,7 +4,6 @@
 
 This repository is a biomedical robotics and prosthetics research platform combining physiological sensing, computer vision, machine learning, embedded acquisition, simulation, and physical robot control. Its central research direction is to use camera-observed hand motion as supervision for learning a continuous mapping from forearm EMG to intended hand configuration, then use that learned mapping without a camera at inference time. The repository also contains a mature, separate SO-arm vision-teleoperation and calibration stack used for robotic-arm experiments.
 
-The code implements much of the software pipeline, but the repository does **not** contain EMG acquisition firmware, recorded EMG sessions, trained model checkpoints, or validated performance results. It is a research platform, not a clinically validated prosthesis.
 
 ## Overview
 
@@ -616,7 +615,7 @@ In retrospect, stereo vision would have been a much better setup for this projec
 
 ## Research Workflow
 
-The code supports the following experimental sequence, although the repository does not yet include data showing that the entire sequence has been completed:
+Software supported experimental sequence:
 
 1. Define an electrode montage and use an isolated, body-safe acquisition chain.
 2. Configure the serial port, channel count, sample rate, and filter band.
@@ -634,8 +633,6 @@ The code supports the following experimental sequence, although the repository d
 ## Evaluation Strategy
 
 Implemented regression metrics are per-output mean absolute error (MAE), root mean square error (RMSE), coefficient of determination (R²), and correlation, plus average batch inference latency. The training scripts also print overall mean MAE/RMSE. `compare_sim_real.py` computes per-channel MAE/RMSE and cross-correlation delay for logs containing `sim_compact01` and `real_compact01`; the standard dual backend logger does not currently emit those exact arrays, so such comparison logs require an external/export step.
-
-No committed dataset, checkpoint, metric report, confusion matrix, subject count, or physical-control benchmark exists. Therefore this README reports no model accuracy or latency result.
 
 For future studies, evaluation should preserve session-level separation and report, as appropriate:
 
@@ -665,8 +662,6 @@ Classification accuracy/F1 are relevant only if a categorical gesture model is a
 
 ## Limitations
 
-- **Acquisition reproducibility:** firmware, ADC, analog front end, isolation, electrode placement, and ground/reference configuration are not included.
-- **No evidence artifacts:** there are no recorded EMG sessions, model checkpoints, or measured research results in the repository.
 - **Surface-EMG variability:** amplitude and spectra vary with placement, skin preparation, impedance, fatigue, contraction force, cross-talk, and session.
 - **Vision-label error:** monocular MediaPipe landmarks can be noisy or occluded and are not a motion-capture gold standard; image landmarks are an even weaker fallback for metric geometry.
 - **Synchronization approximation:** clock fitting and nearest-frame labels are implemented, but camera exposure timestamps are approximated by host time after `read()`, and synchronization error is not reported.
