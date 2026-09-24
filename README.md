@@ -102,24 +102,44 @@ Camera ── landmarks and hand kinematics ───┘
 
 The camera is the **teacher**: it generates an observable hand-state target while EMG is recorded. The learning set is conceptually
 
-\[
-\mathcal{D}=\{(E_i,H_i)\}_{i=1}^{N},
-\]
+$$
+\mathcal{D} = \{(E_i,H_i)\}_{i=1}^{N}
+$$
 
-where \(E_i\) is a recent multichannel EMG window and \(H_i\) is the temporally corresponding vision-derived hand state. The implemented target is a continuous seven-element vector:
+where:
 
-```text
-[thumb abduction, thumb flexion, thumb curl,
- index curl, middle curl, ring curl, pinky curl]
-```
+- $E_i$ is a recent multichannel EMG window;
+- $H_i$ is the corresponding vision-derived hand state.
 
-The model learns parameters \(\theta\) for
+The implemented target is the following continuous seven-element vector:
 
-\[
-\hat{H}=f_{\theta}(E),
-\]
+$$
+H =
+\begin{bmatrix}
+h_{\text{thumb abd}} &
+h_{\text{thumb flex}} &
+h_{\text{thumb curl}} &
+h_{\text{index curl}} &
+h_{\text{middle curl}} &
+h_{\text{ring curl}} &
+h_{\text{pinky curl}}
+\end{bmatrix}
+$$
 
-by comparing the prediction \(\hat{H}\) with the camera-derived label \(H\). This is continuous multivariate regression, not only OPEN/CLOSED classification.
+The model learns parameters $\theta$ for
+
+$$
+\hat{H} = f_{\theta}(E)
+$$
+
+where:
+
+- $E$ is the EMG input;
+- $H$ is the camera-derived target;
+- $\hat{H}$ is the model prediction;
+- $\theta$ represents learned model parameters.
+
+Training compares the prediction $\hat{H}$ with the camera-derived label $H$. This is continuous multivariate regression, not only OPEN/CLOSED classification.
 
 During **inference**, the intended path is different:
 
